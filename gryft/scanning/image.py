@@ -7,13 +7,11 @@ class Image:
     """
     A `dataclass` representing an image.
 
-    publisher (str): The image publisher (Chainguard, RapidFort, Red Hat).
     registry (str): The image registry (cgr.dev, docker.io).
     repository (str): The image repository (chainguard/nginx, ubi7/ubi-minimal).
     tag (str, Optional): The image tag.
     digest (str, Optional): The image digest
     """
-    publisher: str
     registry: str
     repository: str
     tag: str="latest"

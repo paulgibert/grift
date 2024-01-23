@@ -9,9 +9,9 @@ import sh   # Depends on grpye and syft
 from sh import ErrorReturnCode_1
 
 # Local
-from gryft.image import Image
-from gryft.types import CVE, Component
-from gryft.snapshot import ImageSnapshot
+from gryft.scanning.image import Image
+from gryft.scanning.types import CVE, Component
+from gryft.scanning.snapshot import ImageSnapshot
 
 
 @dataclass
@@ -44,7 +44,7 @@ def _scan_grype(image: Image) -> Dict:
     Scans an image with grype.
     """
     try:
-        json_str = sh.grype(image.scan_str(), output="json")
+        json_str = sh.grype(image.identifier(), output="json")
         return json.loads(json_str)
     except ErrorReturnCode_1 as e:
         raise ValueError(f"Image not found ({e.full_cmd} FAILED): " + e.stderr.decode("utf-8"))
@@ -64,17 +64,18 @@ class SyftReport:
 
     @classmethod
     def from_json(cls, data: Dict):
+        if "artifacts" not in data.keys():
+            raise RuntimeError("Syft report is missing the `artifacts` field")
+        artifacts = data["artifacts"]
+        components = [Component.from_artifact(a) for a in artifacts]
+        
         try:
-            artifacts = data["artifacts"]
-            components = [Component.from_artifact(a) for a in artifacts]
-            image_sz = data["source"]["target"]["imageSize"]
-            return cls(components=components,
-                       image_sz=image_sz)
-
+            image_sz = data["source"]["metadata"]["imageSize"]
         except KeyError as e:
-            raise RuntimeError(f"Missing fields in syft report: {str(e)}")
-        except ValueError as e:
-            raise RuntimeError(str(e))
+            raise Exception(f"Syft report is missing field: {str(e)}")
+        
+        return cls(components=components,
+                    image_sz=image_sz)
 
 
 def _scan_syft(image: Image) -> Dict:
@@ -82,12 +83,12 @@ def _scan_syft(image: Image) -> Dict:
     Scans an image with syft.
     """
     try:
-        json_str = sh.syft(image.scan_str(), output="syft-json")
+        json_str = sh.syft(image.identifier(), output="syft-json")
         return json.loads(json_str)
     except ErrorReturnCode_1 as e:
         raise ValueError(f"Image not found ({e.full_cmd} FAILED): " + e.stderr.decode("utf-8"))
     except json.decoder.JSONDecodeError:
-        raise RuntimeError(f"Failed to parse JSON from syft scan of {image.scan_str()}")
+        raise RuntimeError(f"Failed to parse JSON from syft scan of {image}")
 
 
 def scan_syft(image: Image) -> SyftReport:

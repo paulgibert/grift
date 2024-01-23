@@ -15,7 +15,7 @@ class CVE:
     id: str
     severity: str
     fix_state: str
-
+    
     @classmethod
     def from_match(cls, match: Dict):
         """
@@ -34,6 +34,7 @@ class CVE:
             raise ValueError(f"Missing field in grype match: {str(e)}")
 
 
+@dataclass
 class Component:
     """
     A class representing an image component.
