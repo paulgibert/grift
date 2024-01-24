@@ -14,14 +14,7 @@ from tqdm import tqdm
 from gryft.scanning import ImageScanner
 from gryft.scanning.image import Image
 from gryft.scanning.snapshot import ImageSnapshot
-from gryft.analysis.plot import pmc_plot, PMCStyle
-
-
-def _count_rows(df_dict: Dict[str, pd.DataFrame]) -> int:
-    count = 0
-    for df in df_dict.values():
-        count += df.shape[0]
-    return count
+from gryft.analysis.plot import pmc_plot, PMCOptions
 
 
 def _snapshot_to_row(snapshot: ImageSnapshot):
@@ -29,7 +22,7 @@ def _snapshot_to_row(snapshot: ImageSnapshot):
     row["total_cves"] = snapshot.count_cves()
     row["severe_cves"] = snapshot.count_cves(severity=["high", "critical"])
     row["components"] = len(snapshot.components)
-    row["image_sz"] = snapshot.image_sz
+    row["image_sz"] = snapshot.image_sz / 1000000
     return row
 
 
@@ -111,7 +104,7 @@ class CompetitiveAnalysis:
         return reduce(lambda left, right: pd.merge(left, right,
                 on='application', how='inner'), out_dfs)
 
-    def generate_figures(self, colors: Dict[str, str]):
+    def generate_figures(self, colors: Dict[str, str], options: Dict[str, PMCOptions]=None):
         if self.snapshots is None:
             self._load_snapshots()
         
@@ -120,14 +113,18 @@ class CompetitiveAnalysis:
             shutil.rmtree(figs_dir)
         os.mkdir(figs_dir)
         
-        style = PMCStyle(colors)
+        default_options = PMCOptions(colors)
 
         cols = ["total_cves", "severe_cves", "components", "image_sz"]
         titles = ["Total CVEs", "Severe CVEs", "Number of Components", "Image Size (MB)"]
 
         for col, title in zip(cols, titles):
+            opt = None
+            if options and (col in options.keys()):
+                opt = options[col]
+
             tab = self._create_pmc_table(col)
-            fig, _ = pmc_plot(tab, title, style=style)
+            fig, _ = pmc_plot(tab, colors=colors, title=title, options=opt)
 
             fname = col.replace("_", "-") + ".png"
             file_path = os.path.join(figs_dir, fname)
