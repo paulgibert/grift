@@ -18,8 +18,8 @@ class PMCOptions:
     line_width: int=1
     title_padding: int=10
     legend_font_sz: int=8
-    xtick_font_sz: int=8
-    ylabel_font_sz: int=6
+    xtick_font_sz: int=10
+    ylabel_font_sz: int=8
     xlims: List=None
 
 
@@ -66,8 +66,6 @@ def pmc_plot(df: pd.DataFrame, colors: Dict[str, str], title: str, options: PMCO
     n_axes = len(options.xlims)
     fig, axes = plt.subplots(1, n_axes, sharey=True)
 
-    fig.suptitle(title)
-
     if n_axes == 1:
         axes = [axes] # Wrap axes to ensure it is iterable
 
@@ -91,12 +89,14 @@ def pmc_plot(df: pd.DataFrame, colors: Dict[str, str], title: str, options: PMCO
                         linestyle="--",
                         zorder=-1)
                 ax.text(ave, ax.get_ylim()[1], str(np.round(ave, decimals=1)),
-                        ha='center', va='bottom', color=color)
+                        ha='center', va='bottom', color=color,
+                        fontsize=options.xtick_font_sz)
             else:
                 ax.scatter(x, y, color=color, s=options.marker_sz)
         
         ax.set_xlim(xlim)
-
+        ax.tick_params(axis='x', which='both', labelsize=options.xtick_font_sz)
+        
         if i == 0:
             ax.spines.right.set_visible(False)
             ax.set_yticks(y, df["application"], fontsize=options.ylabel_font_sz)
@@ -105,22 +105,17 @@ def pmc_plot(df: pd.DataFrame, colors: Dict[str, str], title: str, options: PMCO
             ax.yaxis.set_visible(False)
 
             # Plot slanted line markers at each break
-            kwargs = dict(marker=[(-0.5, -1), (0.5, 1)], markersize=12,
+            kwargs = dict(marker=[(-0.5, -1), (0.5, 1)], markersize=options.xtick_font_sz,
                           linestyle="none", color='k', mec='k', mew=1, clip_on=False)
             ax.plot(0, 0, transform=ax.transAxes, **kwargs)
             axes[i-1].plot(1, 0, transform=axes[i-1].transAxes, **kwargs)
 
-    # fig.title(title, pad=style.title_padding)
+
+    fig.suptitle(title)
     fig.legend(loc='upper right', ncols=1,
               fontsize=options.legend_font_sz)
     
     # Set min x axis value to 0
-    # fig.margins(x=0)
-
-    # fig.tick_params(axis='x', which='both', labelsize=style.xtick_font_sz)
-
-    # fig.set_yticks(y, df["application"].to_numpy(),
-    #               fontsize=style.ylabel_font_sz)
     
-
+    
     return fig, ax
