@@ -72,8 +72,6 @@ class PMCPlot:
         # Figure adjustments
         matplotlib.rcParams["font.family"] = "serif"
         sns.despine(ax=self._ax)
-
-        plt.subplots_adjust(left=0.20, top=0.90, wspace=0.05)
         
         # Axis adjustments
         self._ax.margins(x=0)
