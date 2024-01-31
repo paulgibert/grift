@@ -4,8 +4,6 @@ from dataclasses import dataclass
 
 # 3rd party
 import matplotlib
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -20,7 +18,7 @@ class PMCOptions:
     legend_font_sz: int=8
     xtick_font_sz: int=10
     ylabel_font_sz: int=8
-    xlims: List=None
+    xaxis_break: Tuple[int, int]=None
 
 
 def _get_x_ranges(df: pd.DataFrame, threshold: float=0.15, max_breaks: int=1) -> List[Tuple]:
@@ -47,75 +45,154 @@ def _get_x_ranges(df: pd.DataFrame, threshold: float=0.15, max_breaks: int=1) ->
     return [(0, x_max + pad)]
 
 
-def pmc_plot(df: pd.DataFrame, colors: Dict[str, str], title: str, options: PMCOptions=None) -> Tuple[Figure, Axes]:
-    """
-    | application | publisher 1 | publisher 2 | ... | publisher N |
-    TODO: This is pretty messy. Need to clean the code up.
-    """
-    matplotlib.rcParams["font.family"] = "serif"
+def _get_xmax(df: pd.DataFrame) -> float:
+    x = sorted(pd.concat([df[col] for col in df.drop(["application"], axis=1)]).tolist())
+    return np.max(x)
 
-    if options is None:
-        options = PMCOptions()
+
+def _get_width_ratios(xmax: float, brk: Tuple[int, int]) -> Tuple[float, float]:
+    # series = [0, brk[0], brk[1], xmax]
+    # diff = np.diff(series) / xmax
+    # return diff[0], diff[1] + diff[2]
+    r0 = brk[0]
+    s0 = r0 / xmax
+    r1 = xmax - brk[1]
+    s1 = r1 * s0 / r0
+    print(s0, s1)
+    return s0, 1 - s0
+
+
+class PMCPlot:
+    def __init__(self, apps: List[str],
+                 marker_sz: float=20, line_width: float=1,
+                 x_font_sz: int=10,
+                 y_font_sz: int=8,
+                 legend_font_sz: int=10):
+        self._fig, self._axe = plt.subplots()
+        self.apps = apps
+        self._N = len(apps)
+
+        # Figure configs
+        self.marker_sz = marker_sz
+        self.line_width = line_width
+        self.x_font_sz = x_font_sz
+        self.y_font_sz = y_font_sz
+        self.legend_font_sz = legend_font_sz
+
+        # Figure adjustments
+        matplotlib.rcParams["font.family"] = "serif"
+        sns.despine(ax=self._ax)
+
+        plt.subplots_adjust(left=0.20, top=0.90, wspace=0.05)
+
+        self._fig.tight_layout()
+        self._fig.legend(loc='upper right', ncols=1,
+                   fontsize=self.legend_font_sz_font_sz)
+        
+        # Axis adjustments
+        self._ax.tick_params(axis='x', which='both', labelsize=self.x_font_sz)
+        self._ax.set_yticks(np.arange(self._N), self.apps,
+                            fontsize=self.y_font_sz)
+
+    def plot(self, data: np.ndarray, label: str=None, color: str=None) -> float:
+        if len(data) != len(self.apps):
+            raise ValueError(f"`data` and `apps` length must be the same. {len(data)} != {len(self._N)}")
+        
+        y = np.arange(self._N)   
     
-    if options.xlims is None:
-        options.xlims = _get_x_ranges(df, max_breaks=0)
-
-    cols = list(df.columns)
-    cols.remove("application")
-
-    n_axes = len(options.xlims)
-    fig, axes = plt.subplots(1, n_axes, sharey=True)
-
-    if n_axes == 1:
-        axes = [axes] # Wrap axes to ensure it is iterable
-
-    fig.tight_layout()
-    plt.subplots_adjust(left=0.15, top=0.90, wspace=0.05)
-
-    y = np.arange(0, df.shape[0])
-
-    for i, xlim, ax in zip(range(n_axes), options.xlims, axes):
-        sns.despine(ax=ax)
-
-        for col in cols:
-            x = df[col].to_numpy()
-            color = colors[col]
-            if i == 0:
-                ax.scatter(x, y, color=color, s=options.marker_sz,
-                    label=col)
-                ave = np.mean(x)
-                ax.vlines(ave, 0, len(y), color=color,
-                        linewidth=options.line_width,
+        self._ax.scatter(data, y, color=color, s=self.marker_sz,
+                         label=label)
+        
+        ave = np.mean(data)
+        self._ax.vlines(ave, 0, self._N, color=color,
+                        linewidth=self.line_width,
                         linestyle="--",
                         zorder=-1)
-                ax.text(ave, ax.get_ylim()[1], str(np.round(ave, decimals=1)),
-                        ha='center', va='bottom', color=color,
-                        fontsize=options.xtick_font_sz)
-            else:
-                ax.scatter(x, y, color=color, s=options.marker_sz)
         
-        ax.set_xlim(xlim)
-        ax.tick_params(axis='x', which='both', labelsize=options.xtick_font_sz)
+        ylim = self.ax.get_ylim()[1]
+        text = str(np.round(ave, decimals=1))
+        self._ax.text(ave, ylim, text, ha='center',
+                      va='bottom', color=color,
+                      fontsize=self.x_font_sz)
+
+        return ave
+
+    def set_title(self, label: str):
+        self._ax.set_title(label)
+    
+    def set_xlabel(self, label: str):
+        self._ax.set_xlabel(label)
+
+    def set_ylabel(self, label: str):
+        self._ax.set_ylabel(label)
+
+    
+# def pmc_plot(df: pd.DataFrame, colors: Dict[str, str], title: str, options: PMCOptions=None) -> Tuple[Figure, Axes]:
+#     """
+#     | application | publisher 1 | publisher 2 | ... | publisher N |
+#     TODO: This is pretty messy. Need to clean the code up.
+#     """
+#     matplotlib.rcParams["font.family"] = "serif"
+
+#     if options is None:
+#         options = PMCOptions()
+
+#     cols = list(df.columns)
+#     cols.remove("application")
+
+#     xmax = _get_xmax(df)
+#     width_ratios = _get_width_ratios(xmax, options.xaxis_break)
+#     fig, axes = plt.subplots(1, 2, sharey=True, width_ratios=width_ratios)
+#     fig.tight_layout()
+
+#     plt.subplots_adjust(left=0.20, top=0.90, wspace=0.05)
+
+#     y = np.arange(0, df.shape[0])
+#     # sns.despine(ax=ax)    
+
+#     for col in cols:
+#         x = df[col].to_numpy()
+#         ave = np.mean(x)
+#         color = colors[col]
+    
+#         axes[0].scatter(x, y, color=color, s=options.marker_sz,
+#                         label=col)
+#         axes[1].scatter(x, y, color=color, s=options.marker_sz)
         
-        if i == 0:
-            ax.spines.right.set_visible(False)
-            ax.set_yticks(y, df["application"], fontsize=options.ylabel_font_sz)
-        else:
-            ax.spines.left.set_visible(False)
-            ax.yaxis.set_visible(False)
-
-            # Plot slanted line markers at each break
-            kwargs = dict(marker=[(-0.5, -1), (0.5, 1)], markersize=options.xtick_font_sz,
-                          linestyle="none", color='k', mec='k', mew=1, clip_on=False)
-            ax.plot(0, 0, transform=ax.transAxes, **kwargs)
-            axes[i-1].plot(1, 0, transform=axes[i-1].transAxes, **kwargs)
-
-
-    fig.suptitle(title)
-    fig.legend(loc='upper right', ncols=1,
-              fontsize=options.legend_font_sz)
+#         ave = np.mean(x)
+#         axes[0].vlines(ave, 0, len(y), color=color,
+#                        linewidth=options.line_width,
+#                        linestyle="--",
+#                        zorder=-1)
+        
+#         axes[0].text(ave, axes[0].get_ylim()[1], str(np.round(ave, decimals=1)),
+#                      ha='center', va='bottom', color=color,
+#                      fontsize=options.xtick_font_sz)
     
-    # Set min x axis value to 0
+#     # x axis
+#     axes[0].tick_params(axis='x', which='both', labelsize=options.xtick_font_sz)
+#     axes[1].tick_params(axis='x', which='both', labelsize=options.xtick_font_sz)
     
+#     # limit x axis
+#     axes[0].set_xlim((0, options.xaxis_break[0]))
+#     axes[1].set_xlim((options.xaxis_break[1], xmax))
+        
+#     # Remove artifacts
+#     axes[0].spines.right.set_visible(False)
+#     axes[0].set_yticks(y, df["application"], fontsize=options.ylabel_font_sz)
     
-    return fig, ax
+#     axes[1].spines.left.set_visible(False)
+#     axes[1].yaxis.set_visible(False)
+
+#     # Plot slanted line markers at the break
+#     kwargs = dict(marker=[(-0.5, -1), (0.5, 1)], markersize=options.xtick_font_sz,
+#                     linestyle="none", color='k', mec='k', mew=1, clip_on=False)
+#     axes[0].plot(0, 0, transform=axes[0].transAxes, **kwargs)
+#     axes[1].plot(1, 0, transform=axes[1].transAxes, **kwargs)
+
+#     # Set figure params
+#     fig.suptitle(title)
+#     fig.legend(loc='upper right', ncols=1,
+#                fontsize=options.legend_font_sz)
+    
+#     return fig, axes

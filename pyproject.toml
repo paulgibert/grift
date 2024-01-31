@@ -1,3 +1,7 @@
+[project]
+name = "gryft"
+version = "0.0.0"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

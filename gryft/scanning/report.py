@@ -21,18 +21,10 @@ class GrypeReport:
     @classmethod
     def from_json(cls, data: Dict):
         try:
-            counts = {k: [] for k in ["critical", "high", "medium",
-                                      "low", "negligible", "unknown"]}
             matches = data["matches"]
+            cves = [CVE.from_match(m) for m in matches]
+            return cls(cves=cves)
 
-            cve_list = [CVE.from_match(m) for m in matches]
-            for c in cve_list:
-                if c.severity not in counts.keys():
-                    raise RuntimeError(f"Grype reported an unrecognized vulnerability severity {c.severity}")
-                counts[c.severity].append(c)
-            
-            return cls(cves=counts)
-        
         except KeyError as e:
             raise RuntimeError(f"Missing fields in grype report: {str(e)}")
         except ValueError as e:
