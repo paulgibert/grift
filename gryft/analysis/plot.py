@@ -10,17 +10,6 @@ import numpy as np
 import pandas as pd
 
 
-@dataclass
-class PMCOptions:
-    marker_sz: int=20
-    line_width: int=1
-    title_padding: int=10
-    legend_font_sz: int=8
-    xtick_font_sz: int=10
-    ylabel_font_sz: int=8
-    xaxis_break: Tuple[int, int]=None
-
-
 def _get_x_ranges(df: pd.DataFrame, threshold: float=0.15, max_breaks: int=1) -> List[Tuple]:
     """
     TODO: Support max_breaks >= 1
@@ -64,11 +53,12 @@ def _get_width_ratios(xmax: float, brk: Tuple[int, int]) -> Tuple[float, float]:
 
 class PMCPlot:
     def __init__(self, apps: List[str],
+                 figsize: Tuple[int, int]=None,
                  marker_sz: float=20, line_width: float=1,
                  x_font_sz: int=10,
                  y_font_sz: int=8,
                  legend_font_sz: int=10):
-        self._fig, self._axe = plt.subplots()
+        self._fig, self._ax = plt.subplots(figsize=figsize)
         self.apps = apps
         self._N = len(apps)
 
@@ -84,12 +74,10 @@ class PMCPlot:
         sns.despine(ax=self._ax)
 
         plt.subplots_adjust(left=0.20, top=0.90, wspace=0.05)
-
-        self._fig.tight_layout()
-        self._fig.legend(loc='upper right', ncols=1,
-                   fontsize=self.legend_font_sz_font_sz)
         
         # Axis adjustments
+        self._ax.margins(x=0)
+        self._ax.set_ylim((-0.5, self._N-0.5))
         self._ax.tick_params(axis='x', which='both', labelsize=self.x_font_sz)
         self._ax.set_yticks(np.arange(self._N), self.apps,
                             fontsize=self.y_font_sz)
@@ -109,22 +97,35 @@ class PMCPlot:
                         linestyle="--",
                         zorder=-1)
         
-        ylim = self.ax.get_ylim()[1]
+        ylim = self._ax.get_ylim()[1]
         text = str(np.round(ave, decimals=1))
         self._ax.text(ave, ylim, text, ha='center',
                       va='bottom', color=color,
-                      fontsize=self.x_font_sz)
+                      fontsize=self.x_font_sz*0.8)
+        
+        self._fig.tight_layout()
 
         return ave
 
-    def set_title(self, label: str):
-        self._ax.set_title(label)
+    def set_title(self, label: str, pad: int=20):
+        self._ax.set_title(label, pad=pad)
+        self._fig.tight_layout()
     
     def set_xlabel(self, label: str):
         self._ax.set_xlabel(label)
+        self._fig.tight_layout()
 
     def set_ylabel(self, label: str):
         self._ax.set_ylabel(label)
+        self._fig.tight_layout()
+
+    def legend(self, loc: str="upper right",
+               ncols: int=1):
+        self._fig.legend(loc=loc, ncols=ncols,
+                         fontsize=self.legend_font_sz,
+                         bbox_to_anchor=(1, 0.9),
+                         bbox_transform=plt.gcf().transFigure)
+        self._fig.tight_layout()
 
     
 # def pmc_plot(df: pd.DataFrame, colors: Dict[str, str], title: str, options: PMCOptions=None) -> Tuple[Figure, Axes]:
