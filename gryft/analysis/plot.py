@@ -9,15 +9,14 @@ import numpy as np
 
 
 class PMCPlot:
-    def __init__(self, apps: List[str],
-                 figsize: Tuple[int, int]=None,
+    def __init__(self, figsize: Tuple[int, int]=None,
                  marker_sz: float=20, line_width: float=1,
                  x_font_sz: int=10,
                  y_font_sz: int=8,
                  legend_font_sz: int=12):
         self._fig, self._ax = plt.subplots(figsize=figsize)
-        self.apps = apps
-        self._N = len(apps)
+        self._apps = None
+        self._N = None
 
         # Figure configs
         self.marker_sz = marker_sz
@@ -29,19 +28,26 @@ class PMCPlot:
         # Figure adjustments
         matplotlib.rcParams["font.family"] = "serif"
         sns.despine(ax=self._ax)
-        
+
+
+    def _adjust_ax(self):
         # Axis adjustments
         self._ax.margins(x=0)
         self._ax.set_ylim((-0.5, self._N-0.5))
         self._ax.tick_params(axis='x', which='both', labelsize=self.x_font_sz)
-        self._ax.set_yticks(np.arange(self._N), self.apps,
+        self._ax.set_yticks(np.arange(self._N), self._apps,
                             fontsize=self.y_font_sz)
 
-    def plot(self, data: np.ndarray, label: str=None, color: str=None) -> float:
-        if len(data) != len(self.apps):
-            raise ValueError(f"`data` and `apps` length must be the same. {len(data)} != {self._N}")
+    def plot(self, data: np.ndarray, applications: List[str], label: str=None, color: str=None) -> float:
+        if self._apps is None:
+            self._apps = applications
+            self._N = len(applications)
+            y = np.arange(self._N)
+        else:
+            y = np.array([list(self._apps).index(a) for a in applications])
         
-        y = np.arange(self._N)   
+        if len(data) != self._N:
+            raise ValueError(f"`data` and `apps` length must be the same. {len(data)} != {self._N}")  
     
         self._ax.scatter(data, y, color=color, s=self.marker_sz,
                          label=label)
@@ -52,6 +58,8 @@ class PMCPlot:
                         linestyle="--",
                         zorder=-1)
         
+        self._adjust_ax() # Must adjust before looking up ylim
+
         ylim = self._ax.get_ylim()[1] + 0.5
         text = str(np.round(ave, decimals=1))
         self._ax.text(ave, ylim, text, ha='center',
