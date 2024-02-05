@@ -17,6 +17,16 @@ class Image:
     tag: str="latest"
     digest: str=None
 
+    def __init__(self, registry: str, repository: str,
+                 tag: str, digest: str=None, **kwargs):
+        self.registry = registry
+        self.repository = repository
+        self.tag = tag
+        self.digest = digest
+
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
     def identifier(self) -> str:
         """
         Returns the identifier of the image.
