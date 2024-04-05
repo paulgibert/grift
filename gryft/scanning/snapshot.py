@@ -22,7 +22,7 @@ class ImageSnapshot:
     def cves_as_pandas(self, include_image=False) -> pd.DataFrame:
         df = pd.DataFrame([vars(c) for c in self.cves])
         if include_image:
-            image_dict = asdict(self.image)
+            image_dict = vars(self.image)
             keys = list(image_dict.keys())
             values = list(image_dict.values())
             df[keys] = values
@@ -31,7 +31,16 @@ class ImageSnapshot:
     def components_as_pandas(self, include_image=False) -> pd.DataFrame:
         df = pd.DataFrame([vars(c) for c in self.components])
         if include_image:
-            image_dict = asdict(self.image)
+            image_dict = vars(self.image)
+            keys = list(image_dict.keys())
+            values = list(image_dict.values())
+            df[keys] = values
+        return df
+    
+    def size_as_pandas(self, include_image=False) -> pd.DataFrame:
+        df = pd.DataFrame({"image_sz": self.image_sz}, index=[0])
+        if include_image:
+            image_dict = vars(self.image)
             keys = list(image_dict.keys())
             values = list(image_dict.values())
             df[keys] = values

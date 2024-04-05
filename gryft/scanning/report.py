@@ -16,19 +16,20 @@ from gryft.scanning.snapshot import ImageSnapshot
 
 @dataclass
 class GrypeReport:
-    cves: Dict[str, List[CVE]]
+    cves: List[CVE]
 
     @classmethod
     def from_json(cls, data: Dict):
-        try:
-            matches = data["matches"]
-            cves = [CVE.from_match(m) for m in matches]
-            return cls(cves=cves)
-
-        except KeyError as e:
-            raise RuntimeError(f"Missing fields in grype report: {str(e)}")
-        except ValueError as e:
-            raise RuntimeError(str(e))
+        matches = data.get("matches", None)
+        cves = []
+        if matches is not None:
+            try:
+                cves = [CVE.from_match(m) for m in matches]
+            except KeyError as e:
+                raise RuntimeError(f"Missing fields in grype report: {str(e)}")
+            except ValueError as e:
+                raise RuntimeError(str(e))
+        return cls(cves=cves)
 
 
 @dataclass

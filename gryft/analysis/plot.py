@@ -15,8 +15,8 @@ class PMCPlot:
                  y_font_sz: int=8,
                  legend_font_sz: int=12):
         self._fig, self._ax = plt.subplots(figsize=figsize)
-        self._apps = None
-        self._N = None
+        self._y_map = []
+        self._ave_lines = []
 
         # Figure configs
         self.marker_sz = marker_sz
@@ -32,43 +32,46 @@ class PMCPlot:
 
     def _adjust_ax(self):
         # Axis adjustments
+        N = len(self._y_map)
         self._ax.margins(x=0)
-        self._ax.set_ylim((-0.5, self._N-0.5))
+        self._ax.set_ylim((-0.5, N-0.5))
         self._ax.tick_params(axis='x', which='both', labelsize=self.x_font_sz)
-        self._ax.set_yticks(np.arange(self._N), self._apps,
+        self._ax.set_yticks(np.arange(N), self._y_map,
                             fontsize=self.y_font_sz)
-
-    def plot(self, data: np.ndarray, applications: List[str], label: str=None, color: str=None) -> float:
-        if self._apps is None:
-            self._apps = applications
-            self._N = len(applications)
-            y = np.arange(self._N)
-        else:
-            y = np.array([list(self._apps).index(a) for a in applications])
-        
-        if len(data) != self._N:
-            raise ValueError(f"`data` and `apps` length must be the same. {len(data)} != {self._N}")  
     
+    def _get_y(self, applications: List[str]):
+        for app in applications:
+            if app not in self._y_map:
+                self._y_map.append(app)    
+        return np.array([self._y_map.index(app) for app in applications])
+    
+    def plot(self, data: np.ndarray, applications: List[str], label: str=None, color: str=None) -> float:
+        y = self._get_y(applications)
         self._ax.scatter(data, y, color=color, s=self.marker_sz,
                          label=label)
         
         ave = np.mean(data)
-        self._ax.vlines(ave, 0, self._N, color=color,
-                        linewidth=self.line_width,
-                        linestyle="--",
-                        zorder=-1)
+        self._ave_lines.append((ave, color))
         
-        self._adjust_ax() # Must adjust before looking up ylim
-
-        ylim = self._ax.get_ylim()[1] + 0.5
-        text = str(np.round(ave, decimals=1))
-        self._ax.text(ave, ylim, text, ha='center',
-                      va='bottom', color=color,
-                      fontsize=self.x_font_sz)
         
+        self._adjust_ax()
         self._fig.tight_layout()
 
         return ave
+
+    def average_lines(self):
+        N = len(self._y_map)
+        for ave, color in self._ave_lines:
+            self._ax.vlines(ave, 0, N, color=color,
+                            linewidth=self.line_width,
+                            linestyle="--",
+                            zorder=-1)
+        
+            ylim = self._ax.get_ylim()[1] + 0.5
+            text = str(np.round(ave, decimals=1))
+            self._ax.text(ave, ylim, text, ha='center',
+                        va='bottom', color=color,
+                        fontsize=self.x_font_sz)
 
     def set_title(self, label: str, pad: int=20):
         self._ax.set_title(label, pad=pad)

@@ -3,7 +3,7 @@ from typing import Dict
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class CVE:
     """
     A `dataclass` representing a CVE.
@@ -34,7 +34,7 @@ class CVE:
             raise ValueError(f"Missing field in grype match: {str(e)}")
 
 
-@dataclass
+@dataclass(frozen=True)
 class Component:
     """
     A class representing an image component.

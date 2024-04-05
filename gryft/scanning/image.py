@@ -1,22 +1,4 @@
-# Standard lib
-from dataclasses import dataclass
-
-
-@dataclass
 class Image:
-    """
-    A `dataclass` representing an image.
-
-    registry (str): The image registry (cgr.dev, docker.io).
-    repository (str): The image repository (chainguard/nginx, ubi7/ubi-minimal).
-    tag (str, Optional): The image tag.
-    digest (str, Optional): The image digest
-    """
-    registry: str
-    repository: str
-    tag: str="latest"
-    digest: str=None
-
     def __init__(self, registry: str, repository: str,
                  tag: str, digest: str=None, **kwargs):
         self.registry = registry

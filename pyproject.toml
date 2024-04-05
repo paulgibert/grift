@@ -1,6 +1,22 @@
 [project]
 name = "gryft"
-version = "0.0.0"
+version = "0.0.1"
+description = "An fast container image scanner using grype and syft."
+readme = "README.md"
+license = {file = "LICENSE"}
+dependencies = [
+    "sh >= 2.0.6",
+    "multiprocess >= 0.70.16",
+    "pandas >= 2.2.0",
+    "tqdm >= 4.66.1",
+    "matplotlib >= 3.8.2",
+    "seaborn >= 0.13.2"
+]
+
+maintainers = [
+  {name = "Paul Gibert", email = "paulgibert98@gmail.com"}
+]
+
 
 [build-system]
 requires = ["hatchling"]

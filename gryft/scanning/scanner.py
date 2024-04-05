@@ -1,5 +1,5 @@
 # Standrad lib
-from typing import Dict, Any, List, Optional
+from typing import Dict, List, Tuple
 import json
 from datetime import datetime, timezone
 
@@ -70,7 +70,7 @@ class ImageScanner:
             snapshots.append(self._scan_image(image))
         return snapshots
 
-    def _scan_pool(self, images: List[Image], nprocs=4) -> List[ImageSnapshot]:
+    def _scan_pool(self, images: List[Image], nprocs: int=4) -> List[ImageSnapshot]:
         p = min(nprocs, mp.cpu_count())
         with mp.Pool(p) as pool:
             snapshots = list(tqdm(pool.imap_unordered(self._scan_image, images),
@@ -96,3 +96,22 @@ class ImageScanner:
         if isinstance(source, Image):
             return snapshots[0]
         return snapshots
+    
+    def scan_pandas(self, df: pd.DataFrame, nprocs: int=4
+                    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        images = [Image(**kwargs.to_dict()) for _, kwargs in df.iterrows()]
+        snapshots = self.scan(images, nprocs)
+        
+        cve_df = pd.DataFrame()
+        component_df = pd.DataFrame()
+        size_df = pd.DataFrame()
+
+        for snap in snapshots:
+            cve_df = pd.concat([cve_df, snap.cves_as_pandas(include_image=True)],
+                    axis=0)
+            component_df = pd.concat([component_df, snap.components_as_pandas(include_image=True)],
+                    axis=0)
+            size_df = pd.concat([size_df, snap.size_as_pandas(include_image=True)],
+                    axis=0)
+        
+        return cve_df, component_df, size_df
