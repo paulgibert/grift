@@ -20,11 +20,11 @@ snapshots = scanner.scan(images)
 
 print(snapshots[0].cves_as_pandas())
 
-  id	                severity	fix_state
-0	CVE-2024-0853	      medium	  fixed
-1	GHSA-wr4c-gwg7-p734	unknown	  fixed
-2	GHSA-mq8w-c2j9-rqxc	unknown	  fixed
-3	GHSA-9xr6-qf7m-2jv5	unknown	  fixed
-4	GHSA-97xx-95pm-5qv6	unknown	  fixed
+        id                      severity    fix_state
+0	CVE-2024-0853	        medium	    fixed
+1	GHSA-wr4c-gwg7-p734	unknown	    fixed
+2	GHSA-mq8w-c2j9-rqxc	unknown	    fixed
+3	GHSA-9xr6-qf7m-2jv5	unknown	    fixed
+4	GHSA-97xx-95pm-5qv6	unknown	    fixed
 ...
 ```
