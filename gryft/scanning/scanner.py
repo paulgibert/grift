@@ -52,34 +52,48 @@ def scan_syft(image: Image) -> SyftReport:
 
 
 class ImageScanner:
-    def _scan_image(self, image: Image) -> ImageSnapshot:
+    def _scan_image(self, args: Tuple[Image, any]) -> ImageSnapshot:
+        image, error_cb = args
         scanned_at = datetime.now(timezone.utc)
-        grype_report = scan_grype(image)
-        syft_report = scan_syft(image)
-        return ImageSnapshot(
-            image=image,
-            scanned_at=scanned_at,
-            cves=grype_report.cves,
-            components=syft_report.components,
-            image_sz=syft_report.image_sz
-        )
-    
-    def _scan_seq(self, images: List[Image]) -> List[ImageSnapshot]:
+        try:
+            grype_report = scan_grype(image)
+            syft_report = scan_syft(image)
+            return ImageSnapshot(
+                image=image,
+                scanned_at=scanned_at,
+                cves=grype_report.cves,
+                components=syft_report.components,
+                image_sz=syft_report.image_sz
+            )
+        except Exception as e:
+            if error_cb is None:
+                raise e
+            error_cb(e)
+            return None
+
+    def _scan_seq(self, images: List[Image],
+                  error_cb: any=None) -> List[ImageSnapshot]:
         snapshots = []
         for image in tqdm(images, desc="Scanning Images"):
-            snapshots.append(self._scan_image(image))
+            snap = self._scan_image((image, error_cb))
+            if snap is not None:
+                snapshots.append(snap)
         return snapshots
 
-    def _scan_pool(self, images: List[Image], nprocs: int=4) -> List[ImageSnapshot]:
+    def _scan_pool(self, images: List[Image], nprocs: int=4,
+                   error_cb: any=None) -> List[ImageSnapshot]:
         p = min(nprocs, mp.cpu_count())
+        inputs = zip(images, [error_cb]*len(images))
         with mp.Pool(p) as pool:
-            snapshots = list(tqdm(pool.imap_unordered(self._scan_image, images),
+            snapshots = list(tqdm(pool.imap_unordered(self._scan_image, inputs),
                     desc=f"Scanning images",
                     total=len(images)))
+            snapshots = [snap for snap in snapshots if snap is not None] # If an error_cb is provided, snapshots may have instances of None
             return snapshots
 
     def scan(self, source: Image | List[Image],
-             nprocs: int=1) -> Image | List[Image]:
+             nprocs: int=4,
+             error_cb: any=None) -> Image | List[Image]:
         if nprocs < 1:
             raise ValueError("`nprocs` must be >= 1")
         
@@ -89,9 +103,9 @@ class ImageScanner:
             images = source
         
         if nprocs == 1:
-            snapshots = self._scan_seq(images)
+            snapshots = self._scan_seq(images, error_cb=error_cb)
         else:
-            snapshots = self._scan_pool(images, nprocs)
+            snapshots = self._scan_pool(images, nprocs, error_cb=error_cb)
         
         if isinstance(source, Image):
             return snapshots[0]
