@@ -1,17 +1,13 @@
 # Standard lib
 from typing import Dict, List
-import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
 
 # 3rd party
 import sh   # Depends on grpye and syft
 from sh import ErrorReturnCode_1
 
 # Local
-from gryft.scanning.image import Image
 from gryft.scanning.types import CVE, Component
-from gryft.scanning.snapshot import ImageSnapshot
 
 
 @dataclass
