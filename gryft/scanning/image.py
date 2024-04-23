@@ -9,6 +9,19 @@ class Image:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    @classmethod
+    def from_identifier(cls, identifier: str):
+        registry = identifier.split("/")[0]
+        repository = "/".join(identifier.split("/")[1:]).split(":")[0]
+        tag = identifier.split(":")[1]
+        if "@" in tag:
+            tag = tag.split("@")[0]
+        if "@" in identifier:
+            digest = identifier.split("@")[1]
+        else:
+            digest = None
+        return cls(registry, repository, tag, digest=digest)
+
     def identifier(self) -> str:
         """
         Returns the identifier of the image.
