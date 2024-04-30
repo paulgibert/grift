@@ -17,6 +17,7 @@ class ImageSnapshot:
     scanned_at: datetime
     cves: List[CVE]
     components: List[Component]
+    distro: str
     image_sz: int
 
     def cves_as_pandas(self, include_image=False) -> pd.DataFrame:

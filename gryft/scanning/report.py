@@ -31,6 +31,7 @@ class GrypeReport:
 @dataclass
 class SyftReport:
     components: List[Component]
+    distro: str
     image_sz: int
 
     @classmethod
@@ -41,9 +42,11 @@ class SyftReport:
         components = [Component.from_artifact(a) for a in artifacts]
         
         try:
+            distro = data["distro"]["id"]
             image_sz = data["source"]["metadata"]["imageSize"]
         except KeyError as e:
             raise Exception(f"Syft report is missing field: {str(e)}")
         
         return cls(components=components,
-                    image_sz=image_sz)
+                   distro=distro,
+                   image_sz=image_sz)

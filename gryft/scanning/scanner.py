@@ -20,7 +20,7 @@ def _scan_grype(image: Image) -> Dict:
     Scans an image with grype.
     """
     try:
-        json_str = sh.grype(image.identifier(), output="json")
+        json_str = sh.grype(image.identifier(), output="json", config="~/.gryft/.grype.yaml")
         return json.loads(json_str)
     except sh.ErrorReturnCode_1 as e:
         raise ValueError(f"Image not found ({e.full_cmd} FAILED): " + e.stderr.decode("utf-8"))
@@ -38,7 +38,7 @@ def _scan_syft(image: Image) -> Dict:
     Scans an image with syft.
     """
     try:
-        json_str = sh.syft(image.identifier(), output="syft-json")
+        json_str = sh.syft(image.identifier(), output="syft-json", config="~/.gryft/.syft.yaml")
         return json.loads(json_str)
     except sh.ErrorReturnCode_1 as e:
         raise ValueError(f"Image not found ({e.full_cmd} FAILED): " + e.stderr.decode("utf-8"))
@@ -63,6 +63,7 @@ class ImageScanner:
                 scanned_at=scanned_at,
                 cves=grype_report.cves,
                 components=syft_report.components,
+                distro=syft_report.distro,
                 image_sz=syft_report.image_sz
             )
         except Exception as e:
