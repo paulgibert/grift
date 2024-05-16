@@ -59,7 +59,7 @@ class PMCPlot:
 
         return ave
 
-    def average_lines(self):
+    def average_lines(self, labels: bool=True, label_decimals: int=0):
         N = len(self._y_map)
         for ave, color in self._ave_lines:
             self._ax.vlines(ave, 0, N, color=color,
@@ -67,11 +67,14 @@ class PMCPlot:
                             linestyle="--",
                             zorder=-1)
         
-            ylim = self._ax.get_ylim()[1] + 0.5
-            text = str(np.round(ave, decimals=1))
-            self._ax.text(ave, ylim, text, ha='center',
-                        va='bottom', color=color,
-                        fontsize=self.x_font_sz)
+            if labels:
+                ylim = self._ax.get_ylim()[1] + 0.5
+                text = np.round(ave, decimals=label_decimals)
+                if label_decimals == 0:
+                    text = int(text)
+                self._ax.text(ave, ylim, str(text), ha='center',
+                            va='bottom', color=color,
+                            fontsize=self.x_font_sz)
 
     def set_title(self, label: str, pad: int=20):
         self._ax.set_title(label, pad=pad)

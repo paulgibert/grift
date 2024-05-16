@@ -44,7 +44,7 @@ def _scan_syft(image: Image) -> Dict:
         raise ValueError(f"Image not found ({e.full_cmd} FAILED): " + e.stderr.decode("utf-8"))
     except json.decoder.JSONDecodeError:
         raise RuntimeError(f"Failed to parse JSON from syft scan of {image}")
-    
+
 
 def scan_syft(image: Image) -> SyftReport:
     data = _scan_syft(image)

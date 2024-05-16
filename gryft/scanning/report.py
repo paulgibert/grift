@@ -43,6 +43,10 @@ class SyftReport:
         
         try:
             distro = data["distro"]["id"]
+        except KeyError:
+            distro = "unknown"
+
+        try:
             image_sz = data["source"]["metadata"]["imageSize"]
         except KeyError as e:
             raise Exception(f"Syft report is missing field: {str(e)}")
