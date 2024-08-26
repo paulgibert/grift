@@ -36,7 +36,7 @@ class Image:
         """
         output = self.repository + ':' + self.tag
         if self.registry is not None:
-            output = self.regigistry + '/' + output
+            output = self.registry + '/' + output
         if self.digest:
             output += f"@{self.digest}"
         return output
