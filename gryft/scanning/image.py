@@ -1,11 +1,11 @@
 class Image:
     def __init__(self, registry: str, repository: str,
-                 tag: str, digest: str=None, **kwargs):
+                 tag: str='latest', digest: str=None, **kwargs):
         self.registry = registry
         self.repository = repository
         self.tag = tag
         self.digest = digest
-
+        
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -34,7 +34,9 @@ class Image:
         Returns:
             String representation of the image.
         """
-        output = f"{self.registry}/{self.repository}:{self.tag}"
+        output = self.repository + ':' + self.tag
+        if self.registry is not None:
+            output = self.regigistry + '/' + output
         if self.digest:
             output += f"@{self.digest}"
         return output
